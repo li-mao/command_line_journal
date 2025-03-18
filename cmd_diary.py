@@ -24,7 +24,7 @@ if os.path.exists(filepath):
             if _.startswith("SecretKey"):
                 SecretKey = _.split("=")[1].strip()
 
-def upload(content):
+def upload(content, key=""):
     # 正常情况日志级别使用 INFO，需要定位时可以修改为 DEBUG，此时 SDK 会打印和服务端的通信信息
     logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 
@@ -35,7 +35,7 @@ def upload(content):
     )).put_object(
         Bucket=Bucket,  # Bucket 由 BucketName-APPID 组成
         Body=content,
-        Key=datetime.datetime.now().strftime("%Y%m%d%H%M%S")+".txt",
+        Key=key or datetime.datetime.now().strftime("%Y%m%d%H%M%S")+".txt",
         StorageClass='MAZ_STANDARD', # 单AZ: STANDARD, 多AZ: MAZ_STANDRD
         ContentType='text/html; charset=utf-8'
     )["ETag"]
@@ -49,6 +49,17 @@ def main():
         nargs='?',  # 将文件名改为可选参数
         help='输入文件路径（如果不提供则读取标准输入）'
     )
+    parser.add_argument(
+        "-d", "--day",
+        type=str, default="",
+        help="时间戳 %Y%m%d"
+    )
+    parser.add_argument(
+        "-n", "--name",
+        type=str, default="",
+        help="文件名"
+    )
+
     args = parser.parse_args()
 
     # 判断输入来源
@@ -69,7 +80,9 @@ def main():
         parser.print_help()
         sys.exit(1)
 
-    print(upload(content))
+    _key = f"{args.day}000000.txt" if args.day else args.name
+
+    print(upload(content, _key))
 
 if __name__ == "__main__":
     main()
